@@ -56,7 +56,7 @@ async function StandingsTable() {
 
   return (
     <div className="mt-9 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
-      <table className="w-full min-w-[600px] text-left text-sm">
+      <table className="w-full min-w-150 text-left text-sm">
         <thead className="border-b border-slate-800 bg-slate-950/60 text-xs uppercase tracking-wide text-slate-400">
           <tr>
             <th scope="col" className="px-4 py-4 font-medium sm:px-5">

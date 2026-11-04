@@ -6,7 +6,7 @@ type Match = {
   id: number;
   homeTeam: { name: string };
   awayTeam: { name: string };
-  competition: { id: number; name: string };
+  competition: ApiCompetition;
   utcDate: string;
   status: string;
   score?: {
@@ -20,6 +20,141 @@ type Match = {
 type MatchesResponse = {
   matches: Match[];
 };
+
+type Competition = {
+  code: string;
+  name: string;
+};
+
+type ApiCompetition = {
+  id: number;
+  name: string;
+  code?: string;
+};
+
+const COMPETITIONS: Competition[] = [
+  { code: "CL", name: "Champions League" },
+  { code: "PL", name: "Premier League" },
+  { code: "ELC", name: "Championship" },
+  { code: "PD", name: "La Liga" },
+  { code: "SA", name: "Serie A" },
+  { code: "BL1", name: "Bundesliga" },
+];
+// FUTURE:
+// Add NBA, Tennis, Formula 1 and Cricket competition registries here.
+
+function sortCompetitions(competitions: Competition[]): Competition[] {
+  return [...competitions].sort((first, second) =>
+    first.name.localeCompare(second.name),
+  );
+}
+
+function filterCompetitions(
+  competitions: Competition[],
+  searchTerm: string,
+): Competition[] {
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
+
+  if (!normalizedSearch) {
+    return competitions;
+  }
+
+  return competitions.filter((competition) =>
+    competition.name.toLocaleLowerCase().includes(normalizedSearch),
+  );
+}
+
+type CompetitionMatchesResult = {
+  matches: Match[];
+  error: string | null;
+};
+
+function getTodayUtcDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getMatchesUrl(
+  selectedDate: string,
+  selectedCompetition?: Competition,
+): URL | null {
+  if (!selectedCompetition) {
+    return selectedDate === getTodayUtcDate()
+      ? new URL("https://api.football-data.org/v4/matches")
+      : null;
+  }
+
+  const url = new URL(
+    `https://api.football-data.org/v4/competitions/${selectedCompetition.code}/matches`,
+  );
+  url.searchParams.set("dateFrom", selectedDate);
+  url.searchParams.set("dateTo", selectedDate);
+  return url;
+}
+
+function normalizeMatches(
+  matches: Match[],
+  selectedCompetition?: Competition,
+): Match[] {
+  return matches.map((match) => {
+    const registryEntry =
+      COMPETITIONS.find(
+        (competition) => competition.code === match.competition.code,
+      ) ?? selectedCompetition;
+
+    return registryEntry
+      ? {
+          ...match,
+          competition: {
+            ...match.competition,
+            code: registryEntry.code,
+            name: registryEntry.name,
+          },
+        }
+      : match;
+  });
+}
+
+function deduplicateAndSortMatches(matches: Match[]): Match[] {
+  const uniqueMatches = new Map<number, Match>();
+  for (const match of matches) {
+    if (!uniqueMatches.has(match.id)) {
+      uniqueMatches.set(match.id, match);
+    }
+  }
+
+  return Array.from(uniqueMatches.values()).sort(
+    (first, second) =>
+      new Date(first.utcDate).getTime() - new Date(second.utcDate).getTime(),
+  );
+}
+
+async function fetchMatches(
+  url: URL,
+  apiKey: string,
+): Promise<CompetitionMatchesResult> {
+  try {
+    const response = await fetch(url, {
+      headers: { "X-Auth-Token": apiKey },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {
+        matches: [],
+        error: `Football fixtures request failed (HTTP ${response.status}).`,
+      };
+    }
+
+    const data: MatchesResponse = await response.json();
+    return { matches: data.matches, error: null };
+  } catch (error) {
+    console.error("Unable to load football fixtures:", error);
+    return {
+      matches: [],
+      error: "Football fixtures could not be loaded.",
+    };
+  }
+}
 
 async function FixturesList({
   selectedDate,
@@ -36,63 +171,60 @@ async function FixturesList({
     return <FixturesMessage message="Football API key is not configured." />;
   }
 
-  let matches: Match[] = [];
-  let dateMatches: Match[] = [];
-  let errorMessage: string | null = null;
+  const competition = COMPETITIONS.find(
+    (entry) => entry.code === selectedCompetition,
+  );
+  const url = getMatchesUrl(selectedDate, competition);
+  const competitionFilter = (
+    <CompetitionFilter
+      competitions={sortCompetitions(COMPETITIONS)}
+      selectedCompetition={selectedCompetition}
+      searchTerm={searchTerm}
+      selectedDate={selectedDate}
+    />
+  );
 
-  try {
-    const response = await fetch("https://api.football-data.org/v4/matches", {
-      headers: { "X-Auth-Token": apiKey },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      errorMessage = `Football API request failed (HTTP ${response.status}).`;
-    } else {
-      const data: MatchesResponse = await response.json();
-      dateMatches = data.matches.filter(
-        (match) => match.utcDate.slice(0, 10) === selectedDate,
-      );
-      matches = dateMatches
-        .filter(
-          (match) =>
-            (!selectedCompetition ||
-              String(match.competition.id) === selectedCompetition) &&
-            (!searchTerm ||
-              match.competition.name
-                .toLocaleLowerCase()
-                .includes(searchTerm.toLocaleLowerCase())),
-        )
-        .slice(0, 10);
-    }
-  } catch (error) {
-    console.error("Unable to load football fixtures:", error);
-    errorMessage = "Unable to load fixtures. Please try again later.";
+  if (!url) {
+    return (
+      <>
+        {competitionFilter}
+        <FixturesMessage message="Select a competition to view fixtures for this date." />
+      </>
+    );
   }
 
-  if (errorMessage) {
-    return <FixturesMessage message={errorMessage} />;
+  const result = await fetchMatches(url, apiKey);
+  if (result.error) {
+    return (
+      <>
+        {competitionFilter}
+        <FixturesMessage message={result.error} />
+      </>
+    );
   }
 
-  const competitions = Array.from(
-    new Map(
-      dateMatches.map((match) => [
-        String(match.competition.id),
-        match.competition,
-      ]),
-    ).values(),
-  ).sort((first, second) => first.name.localeCompare(second.name));
+  const dateMatches = deduplicateAndSortMatches(
+    normalizeMatches(result.matches, competition),
+  );
+  const matches = dateMatches.slice(0, 10);
 
   return (
     <>
-      <CompetitionFilter
-        competitions={competitions}
-        selectedCompetition={selectedCompetition}
-        searchTerm={searchTerm}
-        selectedDate={selectedDate}
-      />
+      {competitionFilter}
       {matches.length === 0 ? (
-        <FixturesMessage message="No fixtures available for this date and filter." />
+        <FixturesMessage
+          message={
+            dateMatches.length === 0
+              ? `No matches scheduled for ${new Intl.DateTimeFormat("en", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  timeZone: "UTC",
+                }).format(new Date(`${selectedDate}T00:00:00.000Z`))}.`
+              : "No matches for this competition on the selected date."
+          }
+        />
       ) : (
         <div className="mt-6 grid gap-4">
           {matches.map((match) => (
@@ -137,6 +269,16 @@ async function FixturesList({
                   </span>
                 </div>
               </div>
+              <div className="border-t border-slate-800 px-5 py-3 sm:px-6">
+                {/* TODO: Add /sports/football/match/[id] as a Match Details page. */}
+                <button
+                  type="button"
+                  disabled
+                  className="cursor-not-allowed rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-500"
+                >
+                  Stats
+                </button>
+              </div>
             </article>
           ))}
         </div>
@@ -161,6 +303,43 @@ function getSelectedDate(dateParam?: string) {
   return dateParam;
 }
 
+function getCalendarDays(selectedDate: string): (string | null)[] {
+  const selected = new Date(`${selectedDate}T00:00:00.000Z`);
+  const year = selected.getUTCFullYear();
+  const month = selected.getUTCMonth();
+  const firstWeekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells: (string | null)[] = Array.from(
+    { length: firstWeekday },
+    () => null,
+  );
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(
+      new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10),
+    );
+  }
+
+  return cells;
+}
+
+function getDateHref(
+  date: string,
+  selectedCompetition: string,
+  searchTerm: string,
+): string {
+  const params = new URLSearchParams({ date });
+
+  if (selectedCompetition) {
+    params.set("competition", selectedCompetition);
+  }
+  if (searchTerm) {
+    params.set("search", searchTerm);
+  }
+
+  return `/sports/football/fixtures?${params.toString()}`;
+}
+
 function DateNavigator({
   selectedDate,
   selectedCompetition,
@@ -173,7 +352,14 @@ function DateNavigator({
   const selected = new Date(`${selectedDate}T00:00:00.000Z`);
   const weekStart = new Date(selected);
   weekStart.setUTCDate(weekStart.getUTCDate() - selected.getUTCDay());
+  const calendarDays = getCalendarDays(selectedDate);
+  const monthLabel = new Intl.DateTimeFormat("en", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(selected);
 
+  // TODO: Future week-based loading.
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart);
     date.setUTCDate(weekStart.getUTCDate() + index);
@@ -203,9 +389,14 @@ function DateNavigator({
           return (
             <Link
               key={day.dateKey}
-              href={`/sports/football/fixtures?date=${day.dateKey}${selectedCompetition ? `&competition=${selectedCompetition}` : ""}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ""}`}
+              href={getDateHref(
+                day.dateKey,
+                selectedCompetition,
+                searchTerm,
+              )}
+              prefetch={false}
               aria-current={isSelected ? "date" : undefined}
-              className={`flex min-h-12 min-w-[4.25rem] flex-1 items-center justify-center rounded-xl border px-2 text-center text-xs font-medium transition-all duration-200 sm:min-w-0 sm:text-sm ${
+              className={`flex min-h-12 min-w-17 flex-1 items-center justify-center rounded-xl border px-2 text-center text-xs font-medium transition-all duration-200 sm:min-w-0 sm:text-sm ${
                 isSelected
                   ? "border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-500/20"
                   : "border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700 hover:bg-slate-800 hover:text-white"
@@ -236,40 +427,40 @@ function DateNavigator({
             <path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" />
           </svg>
         </summary>
-        <form
-          method="get"
-          className="invisible absolute right-0 top-14 z-20 w-72 rounded-xl border border-slate-700 bg-slate-900 p-4 opacity-0 shadow-xl transition-opacity duration-200 group-open:visible group-open:opacity-100"
-        >
-          <label
-            htmlFor="fixture-date"
-            className="text-sm font-medium text-slate-200"
-          >
-            Select date
-          </label>
-          <input
-            id="fixture-date"
-            type="date"
-            name="date"
-            defaultValue={selectedDate}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-          />
-          {selectedCompetition && (
-            <input
-              type="hidden"
-              name="competition"
-              value={selectedCompetition}
-            />
-          )}
-          {searchTerm && (
-            <input type="hidden" name="search" value={searchTerm} />
-          )}
-          <button
-            type="submit"
-            className="mt-3 w-full rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 transition-all duration-200 hover:bg-white"
-          >
-            Go to date
-          </button>
-        </form>
+        <div className="invisible absolute right-0 top-14 z-20 w-[min(21rem,calc(100vw-2.5rem))] rounded-xl border border-slate-700 bg-slate-900 p-4 opacity-0 shadow-xl transition-opacity duration-200 group-open:visible group-open:opacity-100">
+          <div className="mb-4 text-center text-sm font-semibold text-white">
+            {monthLabel}
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-500">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((weekday) => (
+              <span key={weekday} className="py-2 font-medium">
+                {weekday}
+              </span>
+            ))}
+            {calendarDays.map((date, index) => {
+              if (!date) {
+                return <span key={`empty-${index}`} />;
+              }
+
+              const isSelected = date === selectedDate;
+              return (
+                <Link
+                  key={date}
+                  href={getDateHref(date, selectedCompetition, searchTerm)}
+                  prefetch={false}
+                  aria-current={isSelected ? "date" : undefined}
+                  className={`flex h-9 items-center justify-center rounded-lg text-sm transition-colors duration-200 ${
+                    isSelected
+                      ? "bg-blue-500 font-semibold text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  {Number(date.slice(-2))}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </details>
     </div>
   );
@@ -281,16 +472,29 @@ function CompetitionFilter({
   searchTerm,
   selectedDate,
 }: {
-  competitions: { id: number; name: string }[];
+  competitions: Competition[];
   selectedCompetition: string;
   searchTerm: string;
   selectedDate: string;
 }) {
+  const filteredCompetitions = filterCompetitions(competitions, searchTerm);
   const selectedName = competitions.find(
-    (competition) => String(competition.id) === selectedCompetition,
+    (competition) => competition.code === selectedCompetition,
   )?.name;
+  const groupedCompetitions = filteredCompetitions.reduce<
+    Record<string, Competition[]>
+  >((groups, competition) => {
+    const letter = competition.name.charAt(0).toLocaleUpperCase();
+    groups[letter] ??= [];
+    groups[letter].push(competition);
+    return groups;
+  }, {});
 
   return (
+    // FUTURE:
+    // This competition picker can be extracted into
+    // CompetitionFilter.tsx when additional sports,
+    // leagues, or advanced filtering are introduced.
     <div className="mt-6 border-b border-slate-800 pb-4">
       <details className="group relative inline-block">
         <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:border-slate-600 [&::-webkit-details-marker]:hidden">
@@ -310,51 +514,77 @@ function CompetitionFilter({
             />
           </svg>
         </summary>
-        <form
-          method="get"
-          className="invisible absolute left-0 top-14 z-20 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-slate-700 bg-slate-900 p-4 opacity-0 shadow-xl transition-opacity duration-200 group-open:visible group-open:opacity-100"
-        >
-          <input type="hidden" name="date" value={selectedDate} />
-          <label
-            htmlFor="competition-search"
-            className="text-sm font-medium text-slate-200"
-          >
-            Search competitions
-          </label>
-          <input
-            id="competition-search"
-            type="search"
-            name="search"
-            defaultValue={searchTerm}
-            placeholder="Search by competition name"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-blue-400 focus:outline-none"
-          />
-          <label
-            htmlFor="competition-select"
-            className="mt-4 block text-sm font-medium text-slate-200"
-          >
-            Competition
-          </label>
-          <select
-            id="competition-select"
-            name="competition"
-            defaultValue={selectedCompetition}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none"
-          >
-            <option value="">All Competitions</option>
-            {competitions.map((competition) => (
-              <option key={competition.id} value={competition.id}>
-                {competition.name}
-              </option>
+        <div className="invisible absolute left-0 top-14 z-20 w-[min(22rem,calc(100vw-2.5rem))] rounded-xl border border-slate-700 bg-slate-900 p-3 opacity-0 shadow-xl transition-opacity duration-200 group-open:visible group-open:opacity-100">
+          <form method="get">
+            <input type="hidden" name="date" value={selectedDate} />
+            {selectedCompetition && (
+              <input
+                type="hidden"
+                name="competition"
+                value={selectedCompetition}
+              />
+            )}
+            <label htmlFor="competition-search" className="sr-only">
+              Search competitions
+            </label>
+            <input
+              id="competition-search"
+              type="search"
+              name="search"
+              defaultValue={searchTerm}
+              placeholder="Search competitions..."
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-blue-400 focus:outline-none"
+            />
+            <span className="sr-only">
+              Press Enter to search competitions
+            </span>
+          </form>
+          <div className="mt-2 max-h-72 overflow-y-auto">
+            <Link
+              href={`/sports/football/fixtures?date=${selectedDate}`}
+              prefetch={false}
+              aria-current={!selectedCompetition ? "true" : undefined}
+              className={`block rounded-lg px-3 py-2 text-sm transition-colors duration-200 ${
+                !selectedCompetition
+                  ? "bg-slate-800 font-medium text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              All Competitions
+            </Link>
+            {Object.entries(groupedCompetitions).map(([letter, items]) => (
+              <section key={letter} className="mt-2">
+                <h2 className="px-3 py-1 text-xs font-semibold uppercase text-slate-500">
+                  {letter}
+                </h2>
+                {items.map((competition) => {
+                  const isSelected = competition.code === selectedCompetition;
+
+                  return (
+                    <Link
+                      key={competition.code}
+                      href={`/sports/football/fixtures?date=${selectedDate}&competition=${competition.code}`}
+                      prefetch={false}
+                      aria-current={isSelected ? "true" : undefined}
+                      className={`block rounded-lg px-3 py-2 text-sm transition-colors duration-200 ${
+                        isSelected
+                          ? "bg-slate-800 font-medium text-white"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {competition.name}
+                    </Link>
+                  );
+                })}
+              </section>
             ))}
-          </select>
-          <button
-            type="submit"
-            className="mt-4 w-full rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-950 transition-all duration-200 hover:bg-white"
-          >
-            Apply filters
-          </button>
-        </form>
+            {filteredCompetitions.length === 0 && (
+              <p className="px-3 py-4 text-sm text-slate-400">
+                No competitions match your search.
+              </p>
+            )}
+          </div>
+        </div>
       </details>
     </div>
   );
