@@ -29,12 +29,9 @@ function isTeamMatch(value: unknown): value is TeamMatch {
 }
 
 async function fetchApi(endpoint: string, revalidate = 900): Promise<ApiResult> {
-  const apiKey = process.env.FOOTBALL_API_KEY;
-  if (!apiKey) return { payload: null, error: "Football API key is not configured." };
-
   try {
     const response = await fetch(endpoint, {
-      headers: { "X-Auth-Token": apiKey },
+      headers: { "X-Backend-Secret": process.env.BACKEND_SECRET || "nha4110" },
       next: { revalidate },
     });
     const payload: unknown = await response.json();
@@ -84,7 +81,7 @@ async function TeamStatsContent({
   const { teamId, teamName } = await searchParams;
   const isValidId = teamId && /^\d+$/.test(teamId);
   const requestedName = teamName?.trim();
-  const baseUrl = "https://api.football-data.org/v4/teams";
+  const baseUrl = `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/teams`;
   let team: Team | null = null;
   let teamResult: ApiResult = { payload: null, error: null };
   let matchesResult: ApiResult = { payload: null, error: null };

@@ -36,19 +36,14 @@ async function StandingsTable({
 }: {
   competition: Competition;
 }) {
-  const apiKey = process.env.FOOTBALL_API_KEY;
-  if (!apiKey) {
-    return <StandingsMessage message="Football API key is not configured." />;
-  }
-
   let standings: Standing[] = [];
   let errorMessage: string | null = null;
 
   try {
     const response = await fetch(
-      `https://api.football-data.org/v4/competitions/${competition.code}/standings`,
+      `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/competitions/${competition.code}/standings`,
       {
-        headers: { "X-Auth-Token": apiKey },
+        headers: { "X-Backend-Secret": process.env.BACKEND_SECRET || "nha4110" },
         next: { revalidate: 60 * 60 },
       },
     );

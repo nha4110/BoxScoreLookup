@@ -11,13 +11,13 @@ type Standing = {
 };
 
 async function getLeagueSnapshot(): Promise<Standing[]> {
-  const apiKey = process.env.FOOTBALL_API_KEY;
-  if (!apiKey) return [];
-
   try {
     const response = await fetch(
-      "https://api.football-data.org/v4/competitions/PL/standings",
-      { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 3600 } },
+      `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/competitions/PL/standings`,
+      {
+        headers: { "X-Backend-Secret": process.env.BACKEND_SECRET || "nha4110" },
+        next: { revalidate: 3600 },
+      },
     );
     if (!response.ok) {
       console.error(`Homepage standings request failed (HTTP ${response.status}).`);

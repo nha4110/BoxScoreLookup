@@ -70,13 +70,14 @@ function isMatchDetails(value: unknown): value is MatchDetails {
 
 async function fetchMatchData(
   matchId: string,
-  apiKey: string,
 ): Promise<MatchDetails> {
   "use cache";
 
   const response = await fetch(
-    `https://api.football-data.org/v4/matches/${matchId}`,
-    { headers: { "X-Auth-Token": apiKey } },
+    `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/matches/${matchId}`,
+    {
+      headers: { "X-Backend-Secret": process.env.BACKEND_SECRET || "nha4110" },
+    },
   );
   if (!response.ok) {
     throw new Error(`Football match request failed (HTTP ${response.status}).`);
@@ -97,13 +98,8 @@ async function fetchMatchData(
 }
 
 async function getMatch(matchId: string): Promise<MatchResponse> {
-  const apiKey = process.env.FOOTBALL_API_KEY;
-  if (!apiKey) {
-    return { data: null, error: "Football API key is not configured." };
-  }
-
   try {
-    return { data: await fetchMatchData(matchId, apiKey), error: null };
+    return { data: await fetchMatchData(matchId), error: null };
   } catch (error) {
     console.error("Unable to load football match details:", error);
     return {
