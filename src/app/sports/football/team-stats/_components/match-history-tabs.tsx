@@ -65,20 +65,20 @@ export function MatchHistoryTabs({ team, matches }: { team: Team; matches: TeamM
     <section
       id="team-match-history"
       role="tabpanel"
-      className="team-tab-content hidden transition-all duration-300 ease-in-out peer-checked/history:block"
+      className="team-tab-content hidden font-sans peer-checked/history:block"
     >
       <div className="group mt-5">
         <nav aria-label="Filter match history" role="tablist" className="flex gap-2 border-b border-slate-800 pb-3">
           <label
             role="tab"
-            className="group-has-[#past-matches:checked]:border-blue-400 group-has-[#past-matches:checked]:bg-blue-500/10 group-has-[#past-matches:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white"
+            className="group-has-[#past-matches:checked]:border-blue-400 group-has-[#past-matches:checked]:bg-blue-500/10 group-has-[#past-matches:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 hover:text-white"
           >
             <input type="radio" name={`match-history-${team.id}`} id="past-matches" defaultChecked className="sr-only" />
             Past Matches
           </label>
           <label
             role="tab"
-            className="group-has-[#upcoming-matches:checked]:border-blue-400 group-has-[#upcoming-matches:checked]:bg-blue-500/10 group-has-[#upcoming-matches:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white"
+            className="group-has-[#upcoming-matches:checked]:border-blue-400 group-has-[#upcoming-matches:checked]:bg-blue-500/10 group-has-[#upcoming-matches:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 hover:text-white"
           >
             <input type="radio" name={`match-history-${team.id}`} id="upcoming-matches" className="sr-only" />
             Upcoming Matches

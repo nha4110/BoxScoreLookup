@@ -139,7 +139,7 @@ export function TeamAnalytics({ team, matches }: { team: Team; matches: TeamMatc
     <section
       id="team-overview"
       role="tabpanel"
-      className="team-tab-content hidden transition-all duration-300 ease-in-out peer-checked/overview:block"
+      className="team-tab-content hidden font-sans peer-checked/overview:block"
     >
       <div className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-5">
         {metrics.map(([label, value]) => (
@@ -161,9 +161,9 @@ export function TeamAnalytics({ team, matches }: { team: Team; matches: TeamMatc
               aria-label={`${summary.wins} wins, ${summary.draws} draws, ${summary.losses} losses`}
               className="mt-4 flex h-3 overflow-hidden rounded-full bg-slate-800"
             >
-              <span className="bg-emerald-400 transition-all duration-300" style={{ width: `${percentage(summary.wins)}%` }} />
-              <span className="bg-amber-300 transition-all duration-300" style={{ width: `${percentage(summary.draws)}%` }} />
-              <span className="bg-rose-400 transition-all duration-300" style={{ width: `${percentage(summary.losses)}%` }} />
+              <span className="bg-emerald-400 transition-[width] duration-300" style={{ width: `${percentage(summary.wins)}%` }} />
+              <span className="bg-amber-300 transition-[width] duration-300" style={{ width: `${percentage(summary.draws)}%` }} />
+              <span className="bg-rose-400 transition-[width] duration-300" style={{ width: `${percentage(summary.losses)}%` }} />
             </div>
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
               <span><i className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400" />Wins {summary.wins}</span>
@@ -184,7 +184,7 @@ export function TeamAnalytics({ team, matches }: { team: Team; matches: TeamMatc
                     <span className="font-semibold tabular-nums text-white">{count}</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                    <div className={`h-full rounded-full ${color} transition-all duration-300`} style={{ width: `${Math.round((count / maxGoals) * 100)}%` }} />
+                    <div className={`h-full rounded-full ${color} transition-[width] duration-300`} style={{ width: `${Math.round((count / maxGoals) * 100)}%` }} />
                   </div>
                 </div>
               ))}

@@ -64,7 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body className="flex min-h-full flex-col bg-slate-950 text-slate-100 transition-colors duration-300">
+      <body className="flex min-h-full flex-col bg-slate-950 text-slate-100">
         <style>{`
           :root {
             color-scheme: dark;
@@ -117,6 +117,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           html .text-emerald-300 { color: #79b99a; }
           html .text-amber-300 { color: #e0bd72; }
           html .text-rose-300, html .text-rose-400 { color: #ff8291; }
+          html .match-header, html .match-header * { color: #ffffff !important; }
           html .border-slate-800, html .border-slate-700,
           html .border-slate-600, html .border-zinc-800,
           html .divide-slate-800 > :not(:last-child) {
@@ -191,7 +192,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }
           body, header, footer, main, section, article, a, button, input, td, th {
             transition-property: background-color, border-color, color, box-shadow;
-            transition-duration: 200ms;
+            transition-duration: 150ms;
           }
         `}</style>
         <header className="trip-line sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
@@ -215,10 +216,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Home
               </Link>
               <details className="group relative">
-                <summary className="cursor-pointer list-none rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors duration-200 hover:bg-slate-800 hover:text-white [&::-webkit-details-marker]:hidden">
+                <summary className="cursor-pointer list-none rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors duration-150 hover:bg-slate-800 hover:text-white [&::-webkit-details-marker]:hidden">
                   Football <span className="ml-1 text-xs text-slate-500">▾</span>
                 </summary>
-                <div className="pointer-events-none invisible absolute left-0 top-full z-50 w-52 translate-y-1 rounded-xl border border-slate-800 bg-slate-900 p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <div className="pointer-events-none invisible absolute left-0 top-full z-50 w-52 translate-y-1 rounded-xl border border-slate-800 bg-slate-900 p-2 opacity-0 shadow-xl transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                   {[
                     {
                       href: "/sports/football/fixtures",
@@ -232,7 +233,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="block rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors duration-200 hover:bg-slate-800 hover:text-white"
+                      className="block rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors duration-150 hover:bg-slate-800 hover:text-white"
                     >
                       {item.label}
                     </Link>
@@ -269,14 +270,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-400">
               <a
-                href="https://github.com/nha4110"
+                href="https://github.com/nha4110/BoxScoreLookup"
                 target="_blank"
                 rel="noreferrer"
-                className="transition-all duration-200 hover:text-white"
+                className="transition-colors duration-150 hover:text-white"
               >
                 GitHub
               </a>
-              <span>Portfolio · Coming Soon</span>
+              <a
+                href="https://www.linkedin.com/in/nhat-hoang-lu-3209563a2"
+                target="_blank"
+                rel="noreferrer"
+                className="transition-colors duration-150 hover:text-white"
+              >
+                LinkedIn
+              </a>
             </div>
           </div>
         </footer>

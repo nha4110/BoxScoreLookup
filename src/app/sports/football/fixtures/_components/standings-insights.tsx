@@ -24,7 +24,7 @@ export async function StandingsInsights({ competition }: { competition: Competit
   if (!standings.length) return <StandingsMessage />;
 
   return (
-    <section className="trip-line flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-5 lg:h-full">
+    <section className="trip-line flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 font-sans sm:p-5 lg:h-full">
       <div className="mb-4">
         <p className="text-xs font-medium uppercase tracking-wide text-blue-300">
           Standings Insights
@@ -59,7 +59,7 @@ export async function StandingsInsights({ competition }: { competition: Competit
       </div>
       <Link
         href={`/sports/football/standings?league=${leagueSlug(competition.code)}`}
-        className="mt-4 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-200 transition-colors duration-200 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-200"
+        className="mt-4 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-200 transition-colors duration-150 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-200"
       >
         Full Standings
       </Link>
@@ -71,7 +71,7 @@ function StandingsMessage() {
   return (
     <section
       role="status"
-      className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-5 lg:h-full"
+      className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 font-sans sm:p-5 lg:h-full"
     >
       <p className="text-xs font-medium uppercase tracking-wide text-blue-300">
         Standings Insights
@@ -86,7 +86,7 @@ export function StandingsLoading() {
     <section
       role="status"
       aria-label="Loading standings"
-      className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 sm:p-5 lg:h-full"
+      className="flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-4 font-sans sm:p-5 lg:h-full"
     >
       <p className="mb-4 text-sm text-slate-400">Loading standings…</p>
       <div className="grid gap-3" aria-hidden="true">

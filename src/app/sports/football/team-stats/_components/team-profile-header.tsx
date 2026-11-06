@@ -8,7 +8,7 @@ export function TeamProfileHeader({ team }: { team: Team }) {
   ].filter(Boolean);
 
   return (
-    <header className="team-profile-card trip-line flex flex-col gap-5 border border-slate-800 p-6 transition-all duration-300 ease-in-out sm:flex-row sm:items-center sm:p-8">
+    <header className="team-profile-card trip-line flex flex-col gap-5 border border-slate-800 p-6 font-sans sm:flex-row sm:items-center sm:p-8">
       {team.crest ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={team.crest} alt="" className="h-20 w-20 object-contain" />

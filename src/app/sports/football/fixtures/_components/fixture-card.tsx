@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import type { Match, Team } from "./types";
+
+const subscribe = () => () => {};
 
 function Crest({ team }: { team: Team }) {
   return team.crest ? (
@@ -25,21 +30,25 @@ function TeamRow({ team }: { team: Team }) {
 
 export function FixtureCard({ match }: { match: Match }) {
   const hasScore = match.status === "FINISHED" || match.status === "IN_PLAY";
-  const kickoff = new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "UTC",
-  }).format(new Date(match.utcDate));
+  const kickoff = useSyncExternalStore(
+    subscribe,
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(match.utcDate)),
+    () => null,
+  );
 
   return (
-    <article className="trip-line border border-slate-800 bg-slate-900 px-4 py-4 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:border-slate-700 sm:px-5">
+    <article className="trip-line border border-slate-800 bg-slate-900 px-4 py-4 transition-[transform,border-color] duration-150 ease-in-out hover:-translate-y-0.5 hover:border-slate-700 sm:px-5">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
         <div className="min-w-0 space-y-3">
           <TeamRow team={match.homeTeam} />
           <TeamRow team={match.awayTeam} />
           <div className="flex flex-wrap items-center gap-3">
             <time dateTime={match.utcDate} className="text-xs text-slate-400">
-              {kickoff} UTC
+              {kickoff ?? "Local kickoff time"}
             </time>
             <span className="rounded-full bg-blue-500/10 px-2 py-1 text-[11px] font-medium text-blue-300">
               {match.status.replaceAll("_", " ")}

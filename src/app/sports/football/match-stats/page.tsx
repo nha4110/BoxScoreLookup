@@ -120,7 +120,7 @@ function MatchHeader({ match }: { match: MatchDetails }) {
   }).format(new Date(match.utcDate));
 
   return (
-    <header className="trip-line rounded-3xl border border-slate-800 bg-linear-to-br from-slate-900 via-slate-900 to-blue-950/60 p-6 sm:p-8">
+    <header className="match-header trip-line rounded-sm border border-slate-800 bg-linear-to-br from-slate-900 via-slate-900 to-blue-950/60 p-6 sm:p-8">
       <div className="flex flex-wrap items-center gap-4">
         {match.competition?.emblem ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -131,36 +131,36 @@ function MatchHeader({ match }: { match: MatchDetails }) {
           />
         ) : null}
         <div>
-          <p className="text-sm font-medium text-(--app-highlight)">
+          <p className="text-sm font-medium text-white">
             {match.competition?.name ?? "Football"}
           </p>
-          <p className="mt-1 text-xs text-(--app-text-secondary)">
+          <p className="mt-1 text-xs text-white">
             {[match.matchday ? `Matchday ${match.matchday}` : null, match.stage, match.group]
               .filter(Boolean)
               .join(" · ") || "Match details"}
           </p>
         </div>
-        <span className="ml-auto rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-(--app-text-primary)">
+        <span className="ml-auto rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-white">
           {match.status.replaceAll("_", " ")}
         </span>
       </div>
       <div className="mt-7">
-        <h1 className="text-2xl font-bold tracking-tight text-(--app-text-primary) sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
           <Link
             href={`/sports/football/team-stats?teamId=${match.homeTeam.id}`}
-            className="transition-colors duration-200 hover:text-(--app-highlight)"
+            className="text-white"
           >
             {match.homeTeam.name}
           </Link>{" "}
-          <span className="text-(--app-text-muted)">vs</span>{" "}
+          <span className="text-white">vs</span>{" "}
           <Link
             href={`/sports/football/team-stats?teamId=${match.awayTeam.id}`}
-            className="transition-colors duration-200 hover:text-(--app-highlight)"
+            className="text-white"
           >
             {match.awayTeam.name}
           </Link>
         </h1>
-        <p className="mt-2 text-sm text-(--app-text-secondary)">{kickoff} UTC</p>
+        <p className="mt-2 text-sm text-white">{kickoff} UTC</p>
       </div>
     </header>
   );

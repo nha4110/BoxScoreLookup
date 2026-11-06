@@ -4,7 +4,7 @@ import { TeamAnalytics } from "./team-analytics";
 
 export function TeamTabs({ team, matches }: { team: Team; matches: TeamMatch[] }) {
   return (
-    <section className="trip-line mt-6 border border-slate-800 bg-slate-900/80 p-5 sm:p-7">
+    <section className="trip-line mt-6 border border-slate-800 bg-slate-900/80 p-5 font-sans sm:p-7">
       <h2 className="text-lg font-semibold text-white">Season performance</h2>
       <div className="group mt-5">
         <input
@@ -26,14 +26,14 @@ export function TeamTabs({ team, matches }: { team: Team; matches: TeamMatch[] }
           <label
             htmlFor="team-tab-overview"
             role="tab"
-            className="group-has-[#team-tab-overview:checked]:border-blue-400 group-has-[#team-tab-overview:checked]:bg-blue-500/10 group-has-[#team-tab-overview:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white"
+            className="group-has-[#team-tab-overview:checked]:border-blue-400 group-has-[#team-tab-overview:checked]:bg-blue-500/10 group-has-[#team-tab-overview:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 hover:text-white"
           >
             Overview
           </label>
           <label
             htmlFor="team-tab-history"
             role="tab"
-            className="group-has-[#team-tab-history:checked]:border-blue-400 group-has-[#team-tab-history:checked]:bg-blue-500/10 group-has-[#team-tab-history:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white"
+            className="group-has-[#team-tab-history:checked]:border-blue-400 group-has-[#team-tab-history:checked]:bg-blue-500/10 group-has-[#team-tab-history:checked]:text-blue-200 cursor-pointer rounded-lg border border-transparent px-3 py-2 text-sm text-slate-400 hover:text-white"
           >
             Match history
           </label>

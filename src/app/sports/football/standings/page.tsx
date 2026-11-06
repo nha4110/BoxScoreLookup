@@ -71,7 +71,8 @@ async function StandingsTable({
     );
   }
 
-  const maxPoints = Math.max(...standings.map((standing) => standing.points), 1);
+  const topFive = standings.slice(0, 5);
+  const maxPoints = Math.max(...topFive.map((standing) => standing.points), 1);
 
   return (
     <div className="standings-enter standings-scroll mt-9 overflow-x-auto overflow-y-hidden rounded-sm border border-slate-800 bg-slate-900">
@@ -102,10 +103,10 @@ async function StandingsTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-800">
-          {standings.map((standing) => (
+          {topFive.map((standing) => (
             <tr
               key={`${competition.code}-${standing.team.id}`}
-              className="standings-row text-(--app-text-primary) transition-[background-color] duration-300 ease-in-out hover:bg-slate-800"
+              className="standings-row text-(--app-text-primary) hover:bg-slate-800"
             >
               <td className="px-4 py-4 font-medium text-blue-300 sm:px-5">
                 {standing.position}
@@ -122,9 +123,15 @@ async function StandingsTable({
                 </Link>
               </th>
               <td className="px-4 py-4 text-center">{standing.playedGames}</td>
-              <td className="px-4 py-4 text-center">{standing.won}</td>
-              <td className="px-4 py-4 text-center">{standing.draw}</td>
-              <td className="px-4 py-4 text-center">{standing.lost}</td>
+              <td className="px-4 py-4 text-center">
+                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 text-xs font-semibold tabular-nums text-emerald-300">{standing.won}</span>
+              </td>
+              <td className="px-4 py-4 text-center">
+                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/20 px-2 text-xs font-semibold tabular-nums text-amber-300">{standing.draw}</span>
+              </td>
+              <td className="px-4 py-4 text-center">
+                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/20 px-2 text-xs font-semibold tabular-nums text-rose-300">{standing.lost}</span>
+              </td>
               <td className="min-w-52 px-4 py-4">
                 <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <span className="whitespace-nowrap font-semibold tabular-nums text-white">
@@ -136,7 +143,7 @@ async function StandingsTable({
                     className="hidden h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-800 sm:block"
                   >
                     <div
-                      className="h-full rounded-full bg-blue-400 transition-all duration-300"
+                      className="h-full rounded-full bg-blue-400 transition-[width] duration-300"
                       style={{
                         width: `${Math.round((standing.points / maxPoints) * 100)}%`,
                       }}

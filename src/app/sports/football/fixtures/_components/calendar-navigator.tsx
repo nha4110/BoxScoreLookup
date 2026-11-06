@@ -1,21 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { fetchMatches, fixturesHref, monthRange } from "./fixtures-data";
+import { fetchMatches, matchesUrl, monthRange, shiftDate } from "./fixtures-data";
+import { fixturesHref } from "./fixture-utils";
+import { LocalCalendarGrid } from "./local-calendar-grid";
 import type { Competition } from "./types";
-
-function calendarDates(date: string): (string | null)[] {
-  const selected = new Date(`${date}T00:00:00.000Z`);
-  const year = selected.getUTCFullYear();
-  const month = selected.getUTCMonth();
-  const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
-  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  return Array.from({ length: 42 }, (_, index) => {
-    const day = index - firstDay + 1;
-    return day > 0 && day <= lastDay
-      ? new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10)
-      : null;
-  });
-}
 
 function shiftMonth(date: string, offset: number): string {
   const current = new Date(`${date}T00:00:00.000Z`);
@@ -30,50 +18,8 @@ function shiftMonth(date: string, offset: number): string {
   return target.toISOString().slice(0, 10);
 }
 
-function CalendarGrid({
-  date,
-  competition,
-  fixtureDates,
-}: {
-  date: string;
-  competition: Competition;
-  fixtureDates: Set<string>;
-}) {
-  const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-  return (
-    <div className="grid flex-1 grid-cols-7 grid-rows-[auto_repeat(6,minmax(2.25rem,1fr))] gap-0.5 sm:gap-1">
-      {weekdays.map((weekday) => (
-        <div key={weekday} className="py-1.5 text-center text-[11px] font-medium text-slate-500 sm:text-xs">
-          {weekday}
-        </div>
-      ))}
-      {calendarDates(date).map((day, index) =>
-        day ? (
-          <Link
-            key={day}
-            href={fixturesHref(day, competition)}
-            prefetch={false}
-            aria-current={day === date ? "date" : undefined}
-            aria-label={`${Number(day.slice(-2))}${fixtureDates.has(day) ? ", matches available" : ""}`}
-            className={`flex h-full min-h-9 flex-col items-center justify-center rounded-lg border text-xs transition-all duration-300 ease-in-out sm:text-sm ${
-              day === date
-                ? "border-blue-400 bg-blue-500 font-semibold text-white shadow-md shadow-blue-500/15"
-                : "border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-900 hover:text-white"
-            }`}
-          >
-            <span>{Number(day.slice(-2))}</span>
-            {fixtureDates.has(day) && (
-              <span aria-hidden="true" className="calendar-match-indicator h-2.5 text-[9px] leading-2.5 text-amber-300">
-                ★
-              </span>
-            )}
-          </Link>
-        ) : (
-          <span key={`empty-${index}`} className="h-full min-h-9" />
-        ),
-      )}
-    </div>
-  );
+function formatEuropeanDate(date: string): string {
+  return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
 }
 
 async function MonthlyCalendar({
@@ -83,19 +29,14 @@ async function MonthlyCalendar({
   date: string;
   competition: Competition;
 }) {
-  const fixtureDates = new Set<string>();
   const { from, to } = monthRange(date);
   const result = await fetchMatches(
-    new URL(
-      `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/competitions/${competition.code}/matches?dateFrom=${from}&dateTo=${to}`,
-    ),
+    matchesUrl(shiftDate(from, -1), shiftDate(to, 1), competition),
   );
   if (result.error) {
     console.error("Unable to load monthly fixture indicators:", result.error);
-  } else {
-    result.matches.forEach((match) => fixtureDates.add(match.utcDate.slice(0, 10)));
   }
-  return <CalendarGrid date={date} competition={competition} fixtureDates={fixtureDates} />;
+  return <LocalCalendarGrid date={date} competition={competition} matches={result.matches} />;
 }
 
 function LeagueSelector({
@@ -111,7 +52,7 @@ function LeagueSelector({
     <div className="sm:ml-auto sm:w-52">
       <span className="mb-1 block text-xs font-medium text-slate-400">League</span>
       <details className="group relative">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:border-slate-600 [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:border-slate-600 [&::-webkit-details-marker]:hidden">
           {competition.name}<span aria-hidden="true" className="text-slate-400">▾</span>
         </summary>
         <nav
@@ -127,7 +68,7 @@ function LeagueSelector({
                 name="competition"
                 value={item.code}
                 aria-current={item.code === competition.code ? "true" : undefined}
-                className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-all duration-300 ease-in-out ${
+                className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ${
                   item.code === competition.code
                     ? "bg-blue-500/15 font-medium text-blue-200"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -157,7 +98,6 @@ export function CalendarNavigator({
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${date}T00:00:00.000Z`));
-  const emptyIndicators = new Set<string>();
   return (
     <section className="trip-line flex w-full flex-col rounded-2xl border border-slate-800 bg-slate-950 p-3 sm:p-4 lg:h-full">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -189,10 +129,14 @@ export function CalendarNavigator({
         <label className="min-w-0 flex-1">
           <span className="mb-1 block text-xs font-medium text-slate-400">Go to date</span>
           <input
-            type="date"
+            type="text"
             name="date"
-            defaultValue={date}
-            className="scheme-dark min-h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200 focus:border-blue-400 focus:outline-none"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="dd/mm/yyyy"
+            pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+            defaultValue={formatEuropeanDate(date)}
+            className="min-h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200 focus:border-blue-400 focus:outline-none"
           />
         </label>
         <button
@@ -203,7 +147,9 @@ export function CalendarNavigator({
         </button>
       </form>
       <Suspense
-        fallback={<CalendarGrid date={date} competition={competition} fixtureDates={emptyIndicators} />}
+        fallback={
+          <LocalCalendarGrid date={date} competition={competition} matches={[]} />
+        }
       >
         <MonthlyCalendar date={date} competition={competition} />
       </Suspense>

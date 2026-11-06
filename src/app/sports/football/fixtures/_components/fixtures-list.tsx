@@ -1,5 +1,5 @@
-import { fetchMatches, matchesUrl, sortAndNormalizeMatches } from "./fixtures-data";
-import { FixtureCard } from "./fixture-card";
+import { fetchMatches, matchesUrl, shiftDate, sortAndNormalizeMatches } from "./fixtures-data";
+import { LocalFixturesList } from "./local-fixtures-list";
 import type { Competition } from "./types";
 
 export function ApiMessage({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,9 @@ export async function FixturesList({
   date: string;
   competition: Competition;
 }) {
-  const result = await fetchMatches(matchesUrl(date, date, competition));
+  const result = await fetchMatches(
+    matchesUrl(shiftDate(date, -1), shiftDate(date, 1), competition),
+  );
   if (result.error) {
     return (
       <ApiMessage>
@@ -29,13 +31,7 @@ export async function FixturesList({
   }
 
   const matches = sortAndNormalizeMatches(result.matches, competition);
-  return matches.length ? (
-    <div className="mt-6 grid gap-3">
-      {matches.map((match) => <FixtureCard key={match.id} match={match} />)}
-    </div>
-  ) : (
-    <ApiMessage>No fixtures scheduled.</ApiMessage>
-  );
+  return <LocalFixturesList matches={matches} selectedDate={date} />;
 }
 
 export function FixturesLoading() {

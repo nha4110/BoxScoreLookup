@@ -17,12 +17,22 @@ export function getCompetition(code?: string): Competition {
 }
 
 export function selectedDate(date?: string): string {
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (!date) {
     return new Date().toISOString().slice(0, 10);
   }
-  const parsed = new Date(`${date}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/.test(date)
     ? date
+    : (() => {
+        const europeanDate = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(date);
+        return europeanDate
+          ? `${europeanDate[3]}-${europeanDate[2]}-${europeanDate[1]}`
+          : null;
+      })();
+  if (!isoDate) return new Date().toISOString().slice(0, 10);
+  const parsed = new Date(`${isoDate}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === isoDate
+    ? isoDate
     : new Date().toISOString().slice(0, 10);
 }
 
@@ -44,6 +54,12 @@ export function monthRange(date: string): { from: string; to: string } {
     from: new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10),
     to: new Date(Date.UTC(year, month + 1, 0)).toISOString().slice(0, 10),
   };
+}
+
+export function shiftDate(date: string, offset: number): string {
+  const shifted = new Date(`${date}T00:00:00.000Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + offset);
+  return shifted.toISOString().slice(0, 10);
 }
 
 function cacheDuration(url: URL): number {
@@ -95,11 +111,6 @@ export function sortAndNormalizeMatches(
   return [...unique.values()].sort(
     (a, b) => Date.parse(a.utcDate) - Date.parse(b.utcDate),
   );
-}
-
-export function fixturesHref(date: string, competition: Competition): string {
-  const query = new URLSearchParams({ date, competition: competition.code });
-  return `/sports/football/fixtures?${query}`;
 }
 
 export function leagueSlug(code: string): string {
