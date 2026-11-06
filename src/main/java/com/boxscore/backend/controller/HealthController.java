@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 import com.boxscore.backend.service.FootballDataService;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,33 +26,39 @@ public class HealthController {
     public Map<String, Object> health() {
         List<ApiCheck> checks = List.of(
                 new ApiCheck("/api/football/competitions/PL/standings",
-                        () -> footballDataService.getCompetitionStandings("PL")),
+                        () -> new CheckResult("/api/football/competitions/PL/standings",
+                                footballDataService.getCompetitionStandings("PL"))),
                 new ApiCheck("/api/football/competitions/PL/matches",
-                        () -> footballDataService.getCompetitionMatches("PL", null, null)),
-                new ApiCheck("/api/football/matches/2021",
-                        () -> footballDataService.getMatch(2021)),
+                        () -> new CheckResult("/api/football/competitions/PL/matches",
+                                footballDataService.getCompetitionMatches("PL", null, null))),
+                new ApiCheck("/api/football/matches/{matchId}", this::checkSampleMatch),
                 new ApiCheck("/api/football/teams/57",
-                        () -> footballDataService.getTeam(57)),
+                        () -> new CheckResult("/api/football/teams/57", footballDataService.getTeam(57))),
                 new ApiCheck("/api/football/teams/57/matches",
-                        () -> footballDataService.getTeamMatches(57)),
+                        () -> new CheckResult("/api/football/teams/57/matches",
+                                footballDataService.getTeamMatches(57))),
                 new ApiCheck("/api/football/teams?name=Arsenal",
-                        () -> footballDataService.getTeams("Arsenal")));
+                        () -> new CheckResult("/api/football/teams?name=Arsenal",
+                                footballDataService.getTeams("Arsenal"))));
 
         List<String> failingEndpoints = new ArrayList<>();
         for (ApiCheck check : checks) {
+            String endpoint = check.endpoint();
             try {
-                ResponseEntity<JsonNode> response = check.request().get();
+                CheckResult checkResult = check.request().get();
+                endpoint = checkResult.endpoint();
+                ResponseEntity<JsonNode> response = checkResult.response();
                 if (response == null) {
-                    failingEndpoints.add(check.endpoint() + ": No response received");
-                } else if (response.getStatusCode().value() != 200) {
-                    failingEndpoints.add(check.endpoint() + ": HTTP " + response.getStatusCode().value());
+                    failingEndpoints.add(endpoint + ": No response received");
+                } else if (!response.getStatusCode().equals(HttpStatus.OK)) {
+                    failingEndpoints.add(endpoint + ": HTTP " + response.getStatusCode().value());
                 }
             } catch (Exception exception) {
                 String message = exception.getMessage();
                 if (message == null || message.isBlank()) {
                     message = exception.getClass().getSimpleName();
                 }
-                failingEndpoints.add(check.endpoint() + ": " + message.replaceAll("[\\r\\n]+", " ").strip());
+                failingEndpoints.add(endpoint + ": " + message.replaceAll("[\\r\\n]+", " ").strip());
             }
         }
 
@@ -67,6 +74,38 @@ public class HealthController {
         return result;
     }
 
-    private record ApiCheck(String endpoint, Supplier<ResponseEntity<JsonNode>> request) {
+    private CheckResult checkSampleMatch() {
+        ResponseEntity<JsonNode> matchesResponse =
+                footballDataService.getCompetitionMatches("PL", null, null);
+        String fallbackEndpoint = "/api/football/matches/{matchId}";
+        if (matchesResponse == null || !matchesResponse.getStatusCode().equals(HttpStatus.OK)) {
+            return new CheckResult(fallbackEndpoint, matchesResponse);
+        }
+
+        JsonNode matches = matchesResponse.getBody() == null
+                ? null
+                : matchesResponse.getBody().path("matches");
+        if (matches == null || !matches.isArray()) {
+            throw new IllegalStateException("Could not resolve a sample match ID from the PL matches response.");
+        }
+
+        for (JsonNode match : matches) {
+            JsonNode matchIdNode = match.path("id");
+            if (matchIdNode.isIntegralNumber() && matchIdNode.canConvertToLong()) {
+                long matchId = matchIdNode.longValue();
+                if (matchId > 0) {
+                    String endpoint = "/api/football/matches/" + matchId;
+                    return new CheckResult(endpoint, footballDataService.getMatch(matchId));
+                }
+            }
+        }
+
+        throw new IllegalStateException("Could not resolve a sample match ID from the PL matches response.");
+    }
+
+    private record ApiCheck(String endpoint, Supplier<CheckResult> request) {
+    }
+
+    private record CheckResult(String endpoint, ResponseEntity<JsonNode> response) {
     }
 }
