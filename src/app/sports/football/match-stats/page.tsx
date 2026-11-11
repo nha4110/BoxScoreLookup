@@ -321,6 +321,32 @@ async function MatchStatsContent({
         error: "A valid matchId query parameter is required.",
       };
 
+  // Block access while the match is live to prevent rendering crashes
+  if (result.data && (result.data.status === "IN_PLAY" || result.data.status === "PAUSED" || result.data.status === "LIVE")) {
+    return (
+      <main className="match-enter mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <Link
+          href="/sports/football/fixtures"
+          className="mb-5 inline-flex text-sm text-(--app-text-secondary) transition-colors duration-200 hover:text-(--app-highlight)"
+        >
+          ← Back to fixtures
+        </Link>
+        <section
+          role="alert"
+          className="match-enter trip-line rounded-3xl border border-amber-500/20 bg-slate-900 p-6 text-sm text-(--app-text-primary)"
+        >
+          Live match statistics are temporarily unavailable while the match is in progress. Please check back once the match has finished.{" "}
+          <Link
+            href="/sports/football/fixtures"
+            className="font-semibold text-(--app-highlight) transition-colors duration-200 hover:text-(--app-text-primary)"
+          >
+            Browse fixtures.
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="match-enter mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <Link

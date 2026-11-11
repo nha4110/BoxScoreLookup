@@ -44,7 +44,7 @@ async function StandingsTable({
       `${process.env.BACKEND_URL || "https://boxscore-backend.fly.dev"}/api/football/competitions/${competition.code}/standings`,
       {
         headers: { "X-Backend-Secret": process.env.BACKEND_SECRET || "nha4110" },
-        next: { revalidate: 60 * 60 },
+        next: { revalidate: 60 },
       },
     );
 
@@ -71,8 +71,8 @@ async function StandingsTable({
     );
   }
 
-  const topFive = standings.slice(0, 5);
-  const maxPoints = Math.max(...topFive.map((standing) => standing.points), 1);
+  // Use the full standings table instead of slicing to top 5
+  const maxPoints = Math.max(...standings.map((standing) => standing.points), 1);
 
   return (
     <div className="standings-enter standings-scroll mt-9 overflow-x-auto overflow-y-hidden rounded-sm border border-slate-800 bg-slate-900">
@@ -103,7 +103,7 @@ async function StandingsTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-800">
-          {topFive.map((standing) => (
+          {standings.map((standing) => (
             <tr
               key={`${competition.code}-${standing.team.id}`}
               className="standings-row text-(--app-text-primary) hover:bg-slate-800"

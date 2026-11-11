@@ -273,7 +273,7 @@ function LeagueGoalsChart({
               <div
                 key={tick}
                 className="absolute right-0 left-0 border-t border-dashed border-slate-700/70"
-                style={{ top: `${100 - (tick / axisMax) * 100}%` }}
+                style={{ top: `${(tick / axisMax) * 100}%` }}
                 aria-hidden="true"
               />
             ))}
