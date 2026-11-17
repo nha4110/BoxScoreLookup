@@ -22,6 +22,11 @@ public class HealthController {
         this.footballDataService = footballDataService;
     }
 
+    @GetMapping("/health")
+    public Map<String, String> readiness() {
+        return Map.of("status", "UP");
+    }
+
     @GetMapping("/api/health")
     public Map<String, Object> health() {
         List<ApiCheck> checks = List.of(

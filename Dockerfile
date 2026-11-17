@@ -14,5 +14,5 @@ RUN addgroup -S spring && adduser -S spring -G spring
 COPY --from=build /workspace/target/boxscore-backend-0.0.1-SNAPSHOT.jar app.jar
 USER spring:spring
 
-EXPOSE 8080
+EXPOSE 10000
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

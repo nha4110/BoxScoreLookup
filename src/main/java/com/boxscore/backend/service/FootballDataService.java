@@ -4,6 +4,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,8 @@ import org.springframework.web.util.UriBuilder;
 
 @Service
 public class FootballDataService {
+
+    private static final Logger log = LoggerFactory.getLogger(FootballDataService.class);
 
     private static final String API_BASE_URL = "https://api.football-data.org/v4";
 
@@ -26,6 +30,8 @@ public class FootballDataService {
         this.restClient = restClientBuilder.baseUrl(API_BASE_URL).build();
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
+        log.info("STARTUP_STAGE=football_api_initialized baseUrl={} apiKeyConfigured={}",
+                API_BASE_URL, !apiKey.isBlank());
     }
 
     public ResponseEntity<JsonNode> getCompetitionStandings(String code) {
